@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yvann Neo Capitan</title>
+  <!-- Tailwind + Inter + Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* base & keyframes */
+    * { font-family: 'Inter', sans-serif; }
+    
+    /* fade-up animation (scroll reveal) - smoother with transform */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.3, 1), transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1);
+      will-change: opacity, transform;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @keyframes morph {
+      0% { border-radius: 38% 62% 58% 42% / 42% 50% 50% 58%; }
+      33% { border-radius: 48% 52% 42% 58% / 52% 46% 54% 48%; }
+      66% { border-radius: 62% 38% 56% 44% / 38% 62% 38% 62%; }
+      100% { border-radius: 38% 62% 58% 42% / 42% 50% 50% 58%; }
+    }
+    .morph-blob {
+      animation: morph 8s ease-in-out infinite;
+      background: linear-gradient(145deg, #1e2b3f, #131e2f);
+    }
+
+    .skill-hover {
+      transition: all 0.2s ease;
+    }
+    .skill-hover:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 20px 28px -8px rgba(0, 160, 255, 0.4);
+    }
+
+    .under-glow::after {
+      content: '';
+      position: absolute;
+      width: 0%;
+      height: 3px;
+      bottom: -8px;
+      left: 0;
+      background: linear-gradient(90deg, #60a5fa, #c084fc);
+      transition: width 0.25s ease;
+      border-radius: 4px;
+    }
+    .under-glow:hover::after {
+      width: 100%;
+    }
+
+    .bounce-slow {
+      animation: bounce 2.2s infinite;
+    }
+    @keyframes bounce {
+      0%,100%{ transform: translateY(0); }
+      50%{ transform: translateY(-6px); }
+    }
+
+    /* canvas background fixed */
+    #rippleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: auto;
+      display: block;
+    }
+    /* content overlay */
+    .content-overlay {
+      position: relative;
+      z-index: 10;
+      background-color: transparent;
+      pointer-events: none;
+    }
+    .content-overlay * {
+      pointer-events: auto;
+    }
+    /* section cards */
+    .section-card {
+      background-color: rgba(11, 18, 27, 0.7);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(74, 107, 150, 0.2);
+      border-radius: 2.5rem;
+      transition: background-color 0.2s;
+    }
+    .section-card:hover {
+      background-color: rgba(11, 18, 27, 0.8);
+      backdrop-filter: blur(6px);
+    }
+    /* navbar & footer */
+    .nav-blur {
+      background-color: rgba(8, 18, 28, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid #1f2b3b;
+      border-radius: 60px;
+      padding: 0.75rem 1.8rem;
+    }
+    footer {
+      background-color: rgba(8, 18, 28, 0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 60px;
+    }
+    /* text readability */
+    p, h1, h2, h3, span { text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+
+
+    .typing-fixed {
+      min-width: 650px;
+      display: inline-block;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 5.5rem;
+      height: 5.5rem;
+      /* Fixed width based on longest text - "A Machine Learning Engineer" */
+      width: 650px;
+      max-width: 90vw;
+      background: transparent;
+      overflow: visible;
+    }
+    
+    /* cursor styling - bigger and smoother */
+    .typed-cursor {
+      display: inline-block;
+      width: 5px;
+      margin-left: 10px;
+      background: linear-gradient(180deg, #60a5fa, #c084fc);
+      animation: smoothBlink 1s ease-in-out infinite;
+      height: 2.8rem;
+      vertical-align: middle;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    @keyframes smoothBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    
+    /* make the typing text bigger and prevent wrapping */
+    #typing-target {
+      font-size: 2.8rem;
+      line-height: 1.2;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+      display: inline-block;
+      letter-spacing: -0.02em;
+      flex-shrink: 1;
+      min-width: 300px;
+    }
+    
+    @media (max-width: 768px) {
+      .typing-fixed {
+        width: 400px;
+        height: 4.5rem;
+        min-height: 4.5rem;
+      }
+      #typing-target {
+        font-size: 2rem;
+      }
+      .typed-cursor {
+        height: 2.2rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .typing-fixed {
+        width: 320px;
+      }
+      #typing-target {
+        font-size: 1.6rem;
+      }
+    }
+
+    /* contact info cards */
+    .contact-item {
+      background: rgba(31, 45, 63, 0.6);
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      border-radius: 1rem;
+      padding: 1rem 1.5rem;
+      transition: all 0.3s ease;
+    }
+    .contact-item:hover {
+      background: rgba(31, 45, 63, 0.9);
+      border-color: rgba(96, 165, 250, 0.5);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="bg-[#0b1017] text-gray-200 antialiased relative">
+
+  <!-- Canvas for floating / ripple effect -->
+  <canvas id="rippleCanvas"></canvas>
+
+  <!-- main content wrapper -->
+  <div class="content-overlay relative max-w-6xl mx-auto px-5 md:px-8">
+
+    <!-- navbar -->
+    <nav class="nav-blur flex flex-wrap items-center justify-between py-3 px-6 my-4 gap-4">
+      <span class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"><i class="fa-solid fa-code mr-2 text-blue-400"></i>Yvann.Capitan</span>
+      <div class="flex gap-8 font-medium text-gray-300">
+        <a href="#about" class="under-glow relative text-gray-200 hover:text-blue-300 transition">About</a>
+        <a href="#skills" class="under-glow relative hover:text-blue-300">Skills</a>
+        <a href="#projects" class="under-glow relative hover:text-blue-300">Projects</a>
+        <a href="#contact" class="under-glow relative hover:text-blue-300">Contact</a>
+      </div>
+    </nav>
+
+    <!-- ABOUT - visible from start -->
+    <section id="about" class="py-8 md:py-12 fade-up visible">
+      <div class="section-card p-8 md:p-10">
+        <div class="grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <span class="inline-block bg-blue-500/20 text-blue-300 px-5 py-2 rounded-full text-sm font-semibold border border-blue-500/30 mb-6 hover:bg-blue-500/30 transition"><i class="fa-regular fa-hand-peace mr-2"></i>nice to meet you</span>
+            <h1 class="text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+              <span class="bg-gradient-to-r from-blue-300 via-white to-purple-300 bg-clip-text text-transparent">Yvann Neo Capitan</span><br>
+              <!-- typing container with FIXED dimensions -->
+              <span class="typing-fixed items-center">
+                <span id="typing-target"></span>
+                <span class="typed-cursor"></span>
+              </span>
+            </h1>
+            <p class="text-gray-300 text-lg mt-6 max-w-lg">I craft interfaces that feel alive — blending minimal design with thoughtful motion. 3+ years turning complex ideas into smooth, accessible web experiences.</p>
+            <div class="flex flex-wrap gap-4 mt-8">
+              <span class="bg-[#1e2b3d] px-5 py-2 rounded-full text-sm border border-gray-600"><i class="fa-solid fa-map-pin text-blue-400 mr-2"></i>Philippines • Remote</span>
+              <span class="bg-[#1e2b3d] px-5 py-2 rounded-full text-sm border border-gray-600"><i class="fa-solid fa-award text-purple-400 mr-2"></i>8+ projects shipped</span>
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div class="morph-blob w-72 h-72 flex items-center justify-center shadow-2xl border border-blue-500/30">
+              <i class="fa-solid fa-laptop-code text-8xl text-blue-300/90 hover:text-blue-300 transition transform hover:scale-105 duration-300"></i>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-10 text-gray-400 bounce-slow">
+          <i class="fa-solid fa-chevron-down text-2xl"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills" class="py-8 fade-up">
+      <div class="section-card p-8 md:p-10">
+        <h2 class="text-4xl font-bold mb-12 relative inline-block after:content-[''] after:absolute after:h-1 after:w-16 after:bg-gradient-to-r after:from-blue-500 after:to-purple-500 after:bottom-[-10px] after:left-0 hover:after:w-24 after:transition-all">skills</h2>
+        
+        <div class="flex flex-wrap gap-3">
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3 shadow-lg"><i class="fa-brands fa-python text-2xl text-blue-400"></i><span class="font-medium">Python / Django</span></div>
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3"><i class="fa-brands fa-tailwind text-2xl text-cyan-300"></i><span>Tailwind / HTML</span></div>
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3"><i class="fa-solid fa-brain text-2xl text-purple-400"></i><span>YOLOv8</span></div>
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3"><i class="fa-solid fa-database text-2xl text-amber-400"></i><span>MySQL</span></div>
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3"><i class="fa-solid fa-database text-2xl text-green-400"></i><span>Supabase</span></div>
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3"><i class="fa-brands fa-react text-2xl text-blue-400"></i><span>React / Next</span></div>
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3"><i class="fa-brands fa-node text-2xl text-green-500"></i><span>Node.js</span></div>
+          <div class="skill-hover bg-[#1f2d3f] border border-gray-600/80 rounded-full py-3 px-6 flex items-center gap-3"><i class="fa-brands fa-figma text-2xl text-pink-400"></i><span>Figma</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROJECTS - with updated project names -->
+    <section id="projects" class="py-8 fade-up">
+      <div class="section-card p-8 md:p-10">
+        <h2 class="text-4xl font-bold mb-12 relative after:content-[''] after:absolute after:h-1 after:w-16 after:bg-gradient-to-r after:from-blue-500 after:to-purple-500 after:bottom-[-10px] after:left-0 hover:after:w-24 after:transition-all">selected projects</h2>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- project 1: Disgraseye - CCTV Crash Detection -->
+          <div class="group bg-[#1f2d3f]/90 rounded-3xl border border-gray-600/40 overflow-hidden hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/20 transition-all duration-300 backdrop-blur-sm">
+            <div class="h-44 bg-[#2a384d] flex items-center justify-center relative">
+              <i class="fa-solid fa-video text-6xl text-red-400/70"></i>
+              <div class="absolute inset-0 bg-[#0f1a2b]/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition gap-2 text-white backdrop-blur-[2px]"><i class="fa-regular fa-eye"></i> preview</div>
+            </div>
+            <div class="p-5">
+              <h3 class="text-xl font-bold">Disgraseye</h3>
+              <p class="text-gray-300 text-sm mt-1">CCTV based Crash Detection Model using YOLOv8 and computer vision.</p>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">YOLOv8</span>
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">Python</span>
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">OpenCV</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- project 2: Saritas - Styling and Event Management -->
+          <div class="group bg-[#1f2d3f]/90 rounded-3xl border border-gray-600/40 overflow-hidden hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/20 transition backdrop-blur-sm">
+            <div class="h-44 bg-[#2a384d] flex items-center justify-center relative">
+              <i class="fa-solid fa-calendar-check text-6xl text-purple-400/70"></i>
+              <div class="absolute inset-0 bg-[#0f1a2b]/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-regular fa-eye mr-2"></i> preview</div>
+            </div>
+            <div class="p-5">
+              <h3 class="text-xl font-bold">Saritas</h3>
+              <p class="text-gray-300 text-sm">Styling and Event Management System with booking and scheduling.</p>
+              <div class="flex gap-2 mt-3">
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">Django</span>
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">MySQL</span>
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">Bootstrap</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- project 3: HarvestHub - Farmer Ecommerce -->
+          <div class="group bg-[#1f2d3f]/90 rounded-3xl border border-gray-600/40 overflow-hidden hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/20 transition backdrop-blur-sm">
+            <div class="h-44 bg-[#2a384d] flex items-center justify-center relative">
+              <i class="fa-solid fa-leaf text-6xl text-green-400/70"></i>
+              <div class="absolute inset-0 bg-[#0f1a2b]/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-regular fa-eye mr-2"></i> preview</div>
+            </div>
+            <div class="p-5">
+              <h3 class="text-xl font-bold">HarvestHub</h3>
+              <p class="text-gray-300 text-sm">Farmer Ecommerce Website for direct farm-to-consumer sales.</p>
+              <div class="flex gap-2 mt-3">
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">React</span>
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">Supabase</span>
+                <span class="bg-[#32415a] px-3 py-1 text-xs rounded-full">Tailwind</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT - redesigned with contact information -->
+    <section id="contact" class="py-8 fade-up">
+      <div class="section-card p-8 md:p-10">
+        <h2 class="text-4xl font-bold mb-12 relative after:content-[''] after:absolute after:h-1 after:w-16 after:bg-gradient-to-r after:from-blue-500 after:to-purple-500 after:bottom-[-10px] after:left-0 hover:after:w-24 after:transition-all">get in touch</h2>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          <!-- Contact information cards -->
+          <div class="space-y-4">
+            <div class="contact-item flex items-center gap-4">
+              <i class="fa-solid fa-envelope text-3xl text-blue-400"></i>
+              <div>
+                <p class="text-sm text-gray-400">Email</p>
+                <a href="mailto:yvanncapitan1232@gmail.com" class="text-lg font-semibold hover:text-blue-400">
+                yvanncapitan1232@gmail.com
+                </a>
+              </div>
+            </div>
+            
+            <div class="contact-item flex items-center gap-4">
+              <i class="fa-brands fa-facebook text-3xl text-blue-400"></i>
+              <div>
+                <p class="text-sm text-gray-400">Facebook</p>
+                <a href="https://www.facebook.com/neo.capitan" target="_blank" class="text-lg font-semibold hover:text-blue-400">
+                Yvann Neo Capitan
+                </a>
+              </div>
+            </div>
+            
+            <div class="contact-item flex items-center gap-4">
+              <i class="fa-solid fa-phone text-3xl text-blue-400"></i>
+              <div>
+                <p class="text-sm text-gray-400">Phone</p>
+                <p class="text-lg font-semibold">09361280618</p>
+              </div>
+            </div>
+            
+            <div class="contact-item flex items-center gap-4">
+              <i class="fa-brands fa-github text-3xl text-blue-400"></i>
+              <div>
+                <p class="text-sm text-gray-400">GitHub</p>
+                <a href="https://github.com/Neodayo" target="_blank" class="text-lg font-semibold hover:text-blue-400">
+                Neodayo
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quick message/note -->
+          <div class="bg-[#0f1a27]/60 backdrop-blur-sm border border-gray-700/50 rounded-[2rem] p-6 flex flex-col justify-center">
+            <h3 class="text-2xl font-bold mb-4">Let's work together</h3>
+            <p class="text-gray-300 mb-6"></p>
+            <div class="flex gap-4 text-4xl text-gray-400">
+              <a href="#" class="hover:text-blue-400 transition-transform hover:scale-110"><i class="fa-brands fa-github"></i></a>
+              <a href="#" class="hover:text-blue-400 transition-transform hover:scale-110"><i class="fa-brands fa-facebook"></i></a>
+              <a href="#" class="hover:text-blue-400 transition-transform hover:scale-110"><i class="fa-regular fa-envelope"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="border-t border-gray-700/50 py-6 text-center text-gray-400 text-sm mt-8 mb-4 backdrop-blur-sm bg-[#0f1a27]/40 rounded-full">
+      <p>© 2026 Yvann Neo Capitan </p>
+    </footer>
+  </div>
+
+  <!-- Ripple canvas script -->
+  <script>
+    (function() {
+      const canvas = document.getElementById('rippleCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+      let ripples = [];
+
+      const PARTICLE_COUNT = 55;
+      
+      function initParticles() {
+        particles = [];
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: 2 + Math.random() * 8,
+            speedX: (Math.random() - 0.5) * 0.2,
+            speedY: (Math.random() - 0.5) * 0.2,
+            color: `rgba(100, 180, 255, ${0.15 + Math.random()*0.25})`,
+          });
+        }
+      }
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+      }
+      window.addEventListener('resize', resizeCanvas);
+
+      function createRipple(centerX, centerY) {
+        return {
+          x: centerX,
+          y: centerY,
+          radius: 5,
+          maxRadius: 90 + Math.random() * 70,
+          alpha: 0.7,
+          growth: 0.9 + Math.random() * 0.8,
+        };
+      }
+
+      function handleCanvasClick(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const mouseY = (e.clientY - rect.top) * scaleY;
+
+        ripples.push(createRipple(mouseX, mouseY));
+
+        const influenceRadius = 180;
+        for (let p of particles) {
+          const dx = p.x - mouseX;
+          const dy = p.y - mouseY;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < influenceRadius) {
+            const force = (1 - dist/influenceRadius) * 0.9;
+            const angle = Math.atan2(dy, dx);
+            p.speedX += Math.cos(angle) * force * 1.2;
+            p.speedY += Math.sin(angle) * force * 1.2;
+            p.speedX += (Math.random() - 0.5) * 0.1;
+            p.speedY += (Math.random() - 0.5) * 0.1;
+          }
+        }
+      }
+
+      canvas.addEventListener('click', handleCanvasClick);
+
+      function updateParticles() {
+        for (let p of particles) {
+          p.x += p.speedX;
+          p.y += p.speedY;
+          p.speedX *= 0.995;
+          p.speedY *= 0.995;
+
+          if (p.x < 0) p.x = width;
+          if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          if (p.y > height) p.y = 0;
+
+          if (Math.random() < 0.02) {
+            p.speedX += (Math.random() - 0.5) * 0.04;
+            p.speedY += (Math.random() - 0.5) * 0.04;
+          }
+
+          const maxSpeed = 1.2;
+          if (Math.abs(p.speedX) > maxSpeed) p.speedX = Math.sign(p.speedX) * maxSpeed;
+          if (Math.abs(p.speedY) > maxSpeed) p.speedY = Math.sign(p.speedY) * maxSpeed;
+        }
+      }
+
+      function updateRipples() {
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          const r = ripples[i];
+          r.radius += r.growth;
+          r.alpha *= 0.985;
+          r.growth *= 0.995;
+          if (r.alpha < 0.02 || r.radius > r.maxRadius) {
+            ripples.splice(i, 1);
+          }
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        const gradient = ctx.createLinearGradient(0, 0, width*0.6, height);
+        gradient.addColorStop(0, '#0a1420');
+        gradient.addColorStop(1, '#132335');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        for (let p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = 'rgba(70, 180, 255, 0.6)';
+          ctx.shadowBlur = 14;
+          ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+
+        for (let r of ripples) {
+          ctx.beginPath();
+          ctx.arc(r.x, r.y, r.radius, 0, 2 * Math.PI);
+          ctx.strokeStyle = `rgba(200, 230, 255, ${r.alpha * 0.8})`;
+          ctx.lineWidth = 1.8;
+          ctx.stroke();
+          if (r.radius > 12) {
+            ctx.beginPath();
+            ctx.arc(r.x, r.y, r.radius * 0.6, 0, 2 * Math.PI);
+            ctx.strokeStyle = `rgba(160, 210, 255, ${r.alpha * 0.5})`;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          }
+        }
+      }
+
+      function animate() {
+        updateParticles();
+        updateRipples();
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      resizeCanvas();
+      animate();
+
+      setTimeout(() => {
+        for (let i=0; i<4; i++) {
+          setTimeout(() => {
+            ripples.push(createRipple(width * (0.2+0.6*Math.random()), height * (0.2+0.6*Math.random())));
+          }, i * 300);
+        }
+      }, 500);
+    })();
+  </script>
+
+  <!-- FIXED Typing animation - now working properly -->
+  <script>
+    (function(){
+
+  const words = ["A Web Developer", "A Machine Learning Engineer", "A Video Editor"];
+  let wordIndex = 0;
+  let charIndex = 0;
+  let isDeleting = false;
+
+  const target = document.getElementById('typing-target');
+
+  target.textContent = "";
+
+  function typeEffect(){
+
+    const currentWord = words[wordIndex];
+
+    if(isDeleting){
+      target.textContent = currentWord.substring(0, charIndex - 1);
+      charIndex--;
+    }else{
+      target.textContent = currentWord.substring(0, charIndex + 1);
+      charIndex++;
+    }
+
+    if(!isDeleting && charIndex === currentWord.length){
+      setTimeout(()=>{
+        isDeleting = true;
+        typeEffect();
+      },2000);
+      return;
+    }
+
+    if(isDeleting && charIndex === 0){
+      isDeleting = false;
+      wordIndex = (wordIndex + 1) % words.length;
+    }
+
+    const speed = isDeleting ? 40 : 60;
+    setTimeout(typeEffect, speed);
+  }
+
+  setTimeout(typeEffect, 500);
+
+      // ========== SCROLL REVEAL ==========
+      const fadeElements = document.querySelectorAll('.fade-up:not(.visible)');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              entry.target.classList.add('visible');
+            }, 100);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { 
+        threshold: 0.2,
+        rootMargin: '0px 0px -30px 0px'
+      });
+
+      fadeElements.forEach(el => observer.observe(el));
+
+    
+    })();
+  </script>
+</body>
+</html>
